@@ -4,6 +4,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-08-31
+
 - **Paged evidence browser (#8).** The browser consumes the evidence boundary's paged read and
   renders its answered records and total; the `^0.7` console pin rides that contract.
 - **Approval queue freshness (#6).** Refresh idle rows' offered resolution verbs on every Livewire
@@ -32,5 +34,6 @@ All notable changes to Verdict Console Filament will be documented in this file.
   `VerdictConsoleFilamentPlugin` registering into an existing panel -- the host's panel, not one
   of this package's own -- smoke-tested against a Testbench panel; the 24-cell CI matrix.
 
-[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/fissible/verdict-console-filament/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fissible/verdict-console-filament/releases/tag/v0.1.0

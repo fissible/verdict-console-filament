@@ -12,7 +12,7 @@ anomaly alarms — over the console's headless contracts.
 ## Installation
 
 ```bash
-composer require fissible/verdict-console-filament:^0.1
+composer require fissible/verdict-console-filament:^0.2
 ```
 
 Register the plugin into an existing panel — the host's panel, not one of this package's own:
