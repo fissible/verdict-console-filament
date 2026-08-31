@@ -1,0 +1,101 @@
+{
+  "$schema": "https://getcomposer.org/schema.json",
+  "name": "fissible/verdict-console-filament",
+  "description": "Filament plugin for the Verdict Console: approval queue, evidence browser, and ops surfaces over the console's headless contracts.",
+  "keywords": [
+    "ai",
+    "ai-agents",
+    "approval",
+    "human-in-the-loop",
+    "laravel",
+    "laravel-ai",
+    "filament",
+    "verdict"
+  ],
+  "homepage": "https://github.com/fissible/verdict-console-filament",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Allen McCabe",
+      "email": "allenmccabe@gmail.com",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.3",
+    "filament/filament": "^5.4",
+    "fissible/verdict-console": "^0.5",
+    "illuminate/contracts": "^12.0||^13.0",
+    "illuminate/support": "^12.0||^13.0"
+  },
+  "require-dev": {
+    "larastan/larastan": "^3.9",
+    "laravel/pint": "^1.29",
+    "orchestra/testbench": "^10.0||^11.0",
+    "pestphp/pest": "^4.6",
+    "pestphp/pest-plugin-laravel": "^4.1",
+    "pestphp/pest-plugin-type-coverage": "^4.0",
+    "phpstan/extension-installer": "^1.4"
+  },
+  "autoload": {
+    "psr-4": {
+      "Fissible\\VerdictConsoleFilament\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Fissible\\VerdictConsoleFilament\\Tests\\": "tests/"
+    }
+  },
+  "scripts": {
+    "post-autoload-dump": [
+      "@prepare"
+    ],
+    "prepare": [
+      "@php vendor/bin/testbench package:discover --ansi"
+    ],
+    "lint": [
+      "vendor/bin/pint"
+    ],
+    "lint:check": [
+      "vendor/bin/pint --test"
+    ],
+    "analyse": [
+      "vendor/bin/phpstan analyse --memory-limit=1G"
+    ],
+    "test:types": [
+      "@php -d memory_limit=1G vendor/bin/pest --type-coverage --min=100"
+    ],
+    "test:unit": [
+      "vendor/bin/pest"
+    ],
+    "test": [
+      "@analyse",
+      "@lint:check",
+      "@test:types",
+      "@test:unit"
+    ]
+  },
+  "extra": {
+    "verdict-console-filament": {
+      "dependency_constraints": {
+        "fissible/verdict-console": "^0.5: the plugin tracks the current core minor; core's Blade layer is the complete baseline this package upgrades (design §9).",
+        "filament/filament": "^5.4: the oldest Filament 5 minor whose illuminate constraint admits Laravel 13, so the prefer-lowest matrix cell resolves on both supported Laravel majors."
+      }
+    },
+    "laravel": {
+      "providers": [
+        "Fissible\\VerdictConsoleFilament\\VerdictConsoleFilamentServiceProvider"
+      ]
+    }
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true,
+      "phpstan/extension-installer": true
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
