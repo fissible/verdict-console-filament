@@ -11,8 +11,8 @@ use Fissible\VerdictConsole\Approvals\ApprovalItem;
 use Fissible\VerdictConsole\Approvals\ApprovalItemFactory;
 use Fissible\VerdictConsole\Approvals\ApprovalVerb;
 use Fissible\VerdictConsole\Approvals\PendingApproval;
+use Fissible\VerdictConsoleFilament\Concerns\ProvidesTestbenchErrorBag;
 use Fissible\VerdictConsoleFilament\Resources\PendingApprovalResource;
-use Illuminate\Support\MessageBag;
 use Livewire\Attributes\Locked;
 
 /**
@@ -21,6 +21,8 @@ use Livewire\Attributes\Locked;
  */
 final class ListPendingApprovals extends ListRecords
 {
+    use ProvidesTestbenchErrorBag;
+
     protected static string $resource = PendingApprovalResource::class;
 
     /** @var array<string, ApprovalItem> */
@@ -31,25 +33,6 @@ final class ListPendingApprovals extends ListRecords
     /** @var array<string, list<string>> */
     #[Locked]
     public array $approvalVerbs = [];
-
-    /**
-     * Under this Testbench harness, the parent's error-bag read can return null. Delegate to
-     * Livewire first, then repair through its normal writer; this is a no-op where Livewire
-     * supplies its normal MessageBag.
-     */
-    public function getErrorBag(): MessageBag
-    {
-        $bag = parent::getErrorBag();
-
-        if ($bag instanceof MessageBag) {
-            return $bag;
-        }
-
-        $bag = new MessageBag;
-        parent::setErrorBag($bag);
-
-        return $bag;
-    }
 
     /**
      * Keep the item an operator saw through their click; the resolution service then performs the
