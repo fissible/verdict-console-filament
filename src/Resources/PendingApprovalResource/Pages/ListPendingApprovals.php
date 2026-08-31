@@ -28,6 +28,9 @@ final class ListPendingApprovals extends ListRecords
     private bool $forgetApprovalVerbsOnDehydrate = false;
 
     /** @var array<string, list<string>> */
+    private array $clickedApprovalVerbs = [];
+
+    /** @var array<string, list<string>> */
     #[Locked]
     public array $approvalVerbs = [];
 
@@ -39,7 +42,10 @@ final class ListPendingApprovals extends ListRecords
     public function verbs(PendingApproval $record): array
     {
         $key = (string) $record->getKey();
-        $values = $this->approvalVerbs[$key] ??= array_map(
+        $values = $this->mountedTableActionRecordKey() === $key
+            ? $this->clickedApprovalVerbs[$key] ?? null
+            : null;
+        $values ??= $this->approvalVerbs[$key] ??= array_map(
             static fn (ApprovalVerb $verb): string => $verb->value,
             $this->item($record)->verbs,
         );
@@ -59,17 +65,45 @@ final class ListPendingApprovals extends ListRecords
         $key = (string) $record->getKey();
 
         unset($this->approvalItems[$key], $this->approvalVerbs[$key]);
+        unset($this->clickedApprovalVerbs[$key]);
         $this->forgetApprovalVerbsOnDehydrate = true;
     }
 
-    /** Drop only an action's stale row cache after its response, preserving its clicked visibility. */
+    /**
+     * Start every ordinary request with fresh verbs, but retain the rendered set for the table row
+     * whose action is mounting so a decision that lapsed after the click can report that outcome.
+     */
+    public function hydrate(): void
+    {
+        $mountedRecordKey = $this->mountedTableActionRecordKey();
+        $this->clickedApprovalVerbs = $mountedRecordKey === null
+            ? $this->approvalVerbs
+            : array_intersect_key($this->approvalVerbs, [$mountedRecordKey => true]);
+        $this->approvalVerbs = [];
+    }
+
+    /** Drop request-local items and verb sets after every response. */
     public function dehydrate(): void
     {
         $this->approvalItems = [];
+        $this->clickedApprovalVerbs = [];
 
         if ($this->forgetApprovalVerbsOnDehydrate) {
             $this->approvalVerbs = [];
         }
+    }
+
+    private function mountedTableActionRecordKey(): ?string
+    {
+        foreach (array_reverse($this->mountedActions ?? []) as $action) {
+            $context = $action['context'] ?? [];
+
+            if (($context['table'] ?? false) && array_key_exists('recordKey', $context)) {
+                return (string) $context['recordKey'];
+            }
+        }
+
+        return null;
     }
 
     /**
