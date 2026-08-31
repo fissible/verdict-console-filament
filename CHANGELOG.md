@@ -4,6 +4,9 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Require verdict-console `^0.6`.** The bound moves to the current minor per the standing
+  prefer-lowest reasoning; 0.6.0's only change is the Verdict `^0.14` floor, which reaches this
+  package solely through the console.
 - **Ops surfaces (VC-30, #4).** Execution-claim reconciliation, console doctor, configuration
   inspection, and anomaly alarms render the console's claim, doctor, configuration, and incident
   boundaries in the host panel; claim resolution runs through the claim service with the operator's
