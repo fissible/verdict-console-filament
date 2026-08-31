@@ -60,4 +60,15 @@ abstract class TestCase extends Orchestra
             TestPanelProvider::class,
         ];
     }
+
+    /**
+     * @param  Application  $app
+     */
+    protected function defineEnvironment($app): void
+    {
+        // Filament renders encrypted state (and Livewire signs its snapshots), so the harness
+        // needs a key the way any host app has one. Generated per run: a committed literal is
+        // inert here, but indistinguishable from a leaked production key to secret scanners.
+        $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+    }
 }

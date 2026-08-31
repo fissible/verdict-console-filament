@@ -25,9 +25,4 @@
             <directory suffix=".php">src</directory>
         </include>
     </source>
-    <php>
-        <!-- Filament renders encrypted state (and Livewire signs its snapshots), so the harness
-             needs a key the way any host app has one. Static and test-only, never a secret. -->
-        <env name="APP_KEY" value="base64:XCE2P3rV1kkrDPdKMg6mCmG7SxAR3nsAUwq6GEIm/xs="/>
-    </php>
 </phpunit>
