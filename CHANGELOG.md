@@ -4,6 +4,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Paged evidence browser (#8).** The browser consumes the evidence boundary's paged read and
+  renders its answered records and total; the `^0.7` console pin rides that contract.
 - **Approval queue freshness (#6).** Refresh idle rows' offered resolution verbs on every Livewire
   request while retaining a clicked row's rendered verb set through its action visibility check.
 
