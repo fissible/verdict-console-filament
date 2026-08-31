@@ -4,6 +4,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-08-31
+
 - **Require verdict-console `^0.6`.** The bound moves to the current minor per the standing
   prefer-lowest reasoning; 0.6.0's only change is the Verdict `^0.14` floor, which reaches this
   package solely through the console.
@@ -24,3 +26,6 @@ All notable changes to Verdict Console Filament will be documented in this file.
   admitting Laravel 13, so the prefer-lowest matrix cell resolves on both supported majors);
   `VerdictConsoleFilamentPlugin` registering into an existing panel -- the host's panel, not one
   of this package's own -- smoke-tested against a Testbench panel; the 24-cell CI matrix.
+
+[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fissible/verdict-console-filament/releases/tag/v0.1.0
