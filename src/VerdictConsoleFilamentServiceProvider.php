@@ -13,10 +13,4 @@ use Illuminate\Support\ServiceProvider;
  * own panel provider. Nothing here duplicates or overrides a core binding; the heavy Filament
  * dependency stays correctly isolated in this package (core design §9).
  */
-final class VerdictConsoleFilamentServiceProvider extends ServiceProvider
-{
-    public function register(): void
-    {
-        //
-    }
-}
+final class VerdictConsoleFilamentServiceProvider extends ServiceProvider {}
