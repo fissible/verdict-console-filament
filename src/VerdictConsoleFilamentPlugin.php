@@ -6,6 +6,7 @@ namespace Fissible\VerdictConsoleFilament;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Fissible\VerdictConsoleFilament\Resources\PendingApprovalResource;
 
 /**
  * The plugin a host adds to an existing panel: `$panel->plugin(VerdictConsoleFilamentPlugin::make())`.
@@ -30,7 +31,10 @@ final class VerdictConsoleFilamentPlugin implements Plugin
 
     public function register(Panel $panel): void
     {
-        // Resources, pages, and widgets register here as VC-28..VC-30 land.
+        // The queue stays in the host panel so its authenticated operator and scope stay intact.
+        $panel->resources([
+            PendingApprovalResource::class,
+        ]);
     }
 
     public function boot(Panel $panel): void
