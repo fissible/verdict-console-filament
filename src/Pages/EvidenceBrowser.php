@@ -15,6 +15,7 @@ use Filament\Tables\Table;
 use Fissible\Verdict\Decisions\Disposition;
 use Fissible\VerdictConsole\Contracts\EvidenceQuery;
 use Fissible\VerdictConsole\Evidence\EvidenceFilter;
+use Fissible\VerdictConsole\Evidence\EvidencePage;
 use Fissible\VerdictConsole\Evidence\EvidenceRecord;
 use Fissible\VerdictConsole\Evidence\EvidenceRecordingState;
 use Illuminate\Contracts\View\View;
@@ -42,35 +43,21 @@ final class EvidenceBrowser extends Page implements HasTable
     {
         return $table
             ->records(function (array $filters, int $page, int|string $recordsPerPage): LengthAwarePaginator {
-                $result = app(EvidenceQuery::class)->search(new EvidenceFilter(
+                $perPage = $recordsPerPage === 'all' ? PHP_INT_MAX : (int) $recordsPerPage;
+
+                $result = app(EvidenceQuery::class)->searchPage(new EvidenceFilter(
                     disposition: $filters['disposition']['value'] ?? null,
                     capability: $filters['capability']['value'] ?? null,
-                ));
+                ), $page, $perPage);
 
                 $this->recording = $result->recording;
                 $this->recordedBy = $result->recordedBy;
 
-                if ($result->recording !== EvidenceRecordingState::On) {
-                    return new LengthAwarePaginator([], 0, 1, $page);
-                }
-
-                $records = $result->records;
-
-                usort($records, static fn (EvidenceRecord $left, EvidenceRecord $right): int => $right->recordedAt <=> $left->recordedAt);
-
-                $data = [];
-
-                foreach ($records as $record) {
-                    $data[$record->id] = self::record($record);
-                }
-
-                $perPage = $recordsPerPage === 'all' ? max(count($data), 1) : (int) $recordsPerPage;
-
                 return new LengthAwarePaginator(
-                    array_slice($data, ($page - 1) * $perPage, $perPage, preserve_keys: true),
-                    count($data),
-                    $perPage,
-                    $page,
+                    self::records($result),
+                    $result->total,
+                    $result->perPage,
+                    $result->page,
                 );
             })
             ->columns([
@@ -132,6 +119,18 @@ final class EvidenceBrowser extends Page implements HasTable
             'rate_limit_reset_at' => $record->rateLimitResetAt?->format(DATE_ATOM),
             'recorded_at' => $record->recordedAt->format(DATE_ATOM),
         ];
+    }
+
+    /** @return array<string, array<string, string|null>> */
+    private static function records(EvidencePage $page): array
+    {
+        $records = [];
+
+        foreach ($page->records as $record) {
+            $records[$record->id] = self::record($record);
+        }
+
+        return $records;
     }
 
     /** @return array<string, string> */

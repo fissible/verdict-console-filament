@@ -8,6 +8,7 @@ use Fissible\Verdict\Evidence\DatabaseEvidenceRecorder;
 use Fissible\Verdict\Evidence\NullEvidenceRecorder;
 use Fissible\VerdictConsole\Contracts\EvidenceQuery;
 use Fissible\VerdictConsole\Evidence\EvidenceFilter;
+use Fissible\VerdictConsole\Evidence\EvidencePage;
 use Fissible\VerdictConsole\Evidence\EvidenceQueryResult;
 use Fissible\VerdictConsole\Evidence\EvidenceRecord;
 use Fissible\VerdictConsole\Evidence\EvidenceRecordingState;
@@ -48,11 +49,22 @@ final class BrowserEvidenceQuery implements EvidenceQuery
 
     public function __construct(private readonly EvidenceQuery $inner) {}
 
+    /** @var list<array{filter: EvidenceFilter, page: int, perPage: int}> */
+    public array $pages = [];
+
     public function search(EvidenceFilter $filter): EvidenceQueryResult
     {
         $this->filters[] = $filter;
 
         return $this->inner->search($filter);
+    }
+
+    public function searchPage(EvidenceFilter $filter, int $page, int $perPage): EvidencePage
+    {
+        $this->filters[] = $filter;
+        $this->pages[] = ['filter' => $filter, 'page' => $page, 'perPage' => $perPage];
+
+        return $this->inner->searchPage($filter, $page, $perPage);
     }
 
     public function lastFilter(): ?EvidenceFilter
@@ -70,26 +82,46 @@ final class CannedEvidenceQuery implements EvidenceQuery
     {
         return $this->result;
     }
-}
 
-/** Scripted boundary answers, one per search, recording each filter asked — re-answering the last. */
-final class ScriptedEvidenceQuery implements EvidenceQuery
-{
-    /** @var list<EvidenceFilter> */
-    public array $filters = [];
-
-    /** @param list<EvidenceQueryResult> $results */
-    public function __construct(private array $results) {}
-
-    public function search(EvidenceFilter $filter): EvidenceQueryResult
+    public function searchPage(EvidenceFilter $filter, int $page, int $perPage): EvidencePage
     {
-        $this->filters[] = $filter;
-
-        return count($this->results) > 1 ? array_shift($this->results) : $this->results[0];
+        return new EvidencePage(
+            $this->result->recording,
+            $this->result->records,
+            count($this->result->records),
+            $page,
+            $perPage,
+            $this->result->recordedBy,
+            $this->result->conversation,
+        );
     }
 }
 
-function cannedRecord(string $id, ?string $recordDigest = null): EvidenceRecord
+/** Scripted paged answers, one per read, recording each question asked — re-answering the last. */
+final class ScriptedEvidenceQuery implements EvidenceQuery
+{
+    /** @var list<array{filter: EvidenceFilter, page: int, perPage: int}> */
+    public array $asked = [];
+
+    /** @param list<EvidencePage> $pages */
+    public function __construct(private array $pages) {}
+
+    public function search(EvidenceFilter $filter): EvidenceQueryResult
+    {
+        // The browser has no complete-projection rendering: a surface that reaches for it here is
+        // materializing the snapshot this issue exists to stop.
+        throw new LogicException('The evidence browser reads pages from the boundary.');
+    }
+
+    public function searchPage(EvidenceFilter $filter, int $page, int $perPage): EvidencePage
+    {
+        $this->asked[] = ['filter' => $filter, 'page' => $page, 'perPage' => $perPage];
+
+        return count($this->pages) > 1 ? array_shift($this->pages) : $this->pages[0];
+    }
+}
+
+function cannedRecord(string $id, ?string $recordDigest = null, ?DateTimeImmutable $recordedAt = null): EvidenceRecord
 {
     return new EvidenceRecord(
         id: $id,
@@ -111,7 +143,7 @@ function cannedRecord(string $id, ?string $recordDigest = null): EvidenceRecord
         executionClaimBindingFingerprint: null,
         invocationId: null,
         rateLimitResetAt: null,
-        recordedAt: new DateTimeImmutable('2026-08-30 12:00:00+00:00'),
+        recordedAt: $recordedAt ?? new DateTimeImmutable('2026-08-30 12:00:00+00:00'),
     );
 }
 
@@ -347,37 +379,87 @@ it('renders the rows the boundary answered for each filter, never a local sieve'
     config()->set('verdict.evidence.recorder', DatabaseEvidenceRecorder::class);
     insertBrowserEvidence(['id' => 'db-deny', 'disposition' => 'deny', 'record_digest' => 'canonicaljson-sha256:db-deny', 'recorded_at' => '2026-08-30 10:00:00']);
 
+    // The initial page is deliberately ordered contrary to recordedAt (older row first): the
+    // boundary owns page order, and a browser that re-sorts an answered page would flip it.
     $scripted = new ScriptedEvidenceQuery([
-        new EvidenceQueryResult(EvidenceRecordingState::On, [cannedRecord('initial-answer', 'canonicaljson-sha256:initial')]),
-        new EvidenceQueryResult(EvidenceRecordingState::On, [cannedRecord('filtered-answer', 'canonicaljson-sha256:filtered')]),
-        new EvidenceQueryResult(EvidenceRecordingState::On, [cannedRecord('cleared-answer', 'canonicaljson-sha256:cleared')]),
+        new EvidencePage(EvidenceRecordingState::On, [
+            cannedRecord('initial-answer', 'canonicaljson-sha256:initial', new DateTimeImmutable('2026-08-30 10:00:00+00:00')),
+            cannedRecord('initial-second', 'canonicaljson-sha256:initial-second', new DateTimeImmutable('2026-08-30 12:00:00+00:00')),
+        ], total: 41, page: 1, perPage: 10),
+        new EvidencePage(EvidenceRecordingState::On, [cannedRecord('filtered-answer', 'canonicaljson-sha256:filtered')], total: 7, page: 1, perPage: 10),
+        new EvidencePage(EvidenceRecordingState::On, [cannedRecord('cleared-answer', 'canonicaljson-sha256:cleared')], total: 41, page: 1, perPage: 10),
     ]);
     app()->instance(EvidenceQuery::class, $scripted);
 
+    // The boundary's total is the paginator's total: one rendered record beside forty-one claimed
+    // proves the count came from the answer, not from measuring the materialized set.
     $page = browserPage()
-        ->assertCountTableRecords(1)
-        ->assertSee('canonicaljson-sha256:initial')
+        ->assertSeeInOrder(['canonicaljson-sha256:initial', 'canonicaljson-sha256:initial-second'])
         ->assertDontSee('canonicaljson-sha256:db-deny');
 
+    expect($page->instance()->getTableRecords()->count())->toBe(2)
+        ->and($page->instance()->getTableRecords()->total())->toBe(41);
+
     $page->filterTable('disposition', 'deny')
-        ->assertCountTableRecords(1)
         ->assertSee('canonicaljson-sha256:filtered')
         ->assertDontSee('canonicaljson-sha256:initial')
+        ->assertDontSee('canonicaljson-sha256:initial-second')
         ->assertDontSee('canonicaljson-sha256:db-deny');
+
+    expect($page->instance()->getTableRecords()->count())->toBe(1)
+        ->and($page->instance()->getTableRecords()->total())->toBe(7);
 
     // Exactly the cleared answer: not the filtered one, and no cached initial or database rows
     // merged back in.
     $page->filterTable('disposition', null)
-        ->assertCountTableRecords(1)
         ->assertSee('canonicaljson-sha256:cleared')
         ->assertDontSee('canonicaljson-sha256:filtered')
         ->assertDontSee('canonicaljson-sha256:initial')
+        ->assertDontSee('canonicaljson-sha256:initial-second')
         ->assertDontSee('canonicaljson-sha256:db-deny');
 
-    // And the filters really were the questions asked, in order.
-    $asked = array_map(fn (EvidenceFilter $filter): ?string => $filter->disposition, $scripted->filters);
+    // And the filters really were the questions asked, in order, through the paged read alone.
+    $asked = array_map(fn (array $ask): ?string => $ask['filter']->disposition, $scripted->asked);
 
     expect($asked)->toBe([null, 'deny', null]);
+});
+
+/**
+ * #8's acceptance against real storage: the browser asks the boundary for one page and renders the
+ * boundary's total, so the table stops materializing the snapshot. Twelve rows, page size ten: the
+ * second page's two rows exist only in an answer the full-snapshot implementation never asks for.
+ */
+it('asks the boundary for the visible page and renders its filtered total', function (): void {
+    config()->set('verdict.evidence.recorder', DatabaseEvidenceRecorder::class);
+
+    foreach (range(1, 12) as $i) {
+        $id = sprintf('row-%02d', $i);
+        insertBrowserEvidence(['id' => $id, 'record_digest' => 'canonicaljson-sha256:'.$id, 'recorded_at' => sprintf('2026-08-30 10:%02d:00', $i)]);
+    }
+
+    $page = browserPage()
+        ->assertSee('canonicaljson-sha256:row-12')
+        ->assertDontSee('canonicaljson-sha256:row-02');
+
+    expect($page->instance()->getTableRecords()->count())->toBe(10)
+        ->and($page->instance()->getTableRecords()->total())->toBe(12)
+        ->and(test()->evidence->pages)->not->toBe([])
+        ->and(test()->evidence->pages[array_key_last(test()->evidence->pages)])->toMatchArray(['page' => 1, 'perPage' => 10]);
+
+    $page->call('gotoPage', 2)
+        ->assertSee('canonicaljson-sha256:row-02')
+        ->assertSee('canonicaljson-sha256:row-01')
+        ->assertDontSee('canonicaljson-sha256:row-12');
+
+    expect($page->instance()->getTableRecords()->count())->toBe(2)
+        ->and($page->instance()->getTableRecords()->total())->toBe(12)
+        ->and(test()->evidence->pages[array_key_last(test()->evidence->pages)])->toMatchArray(['page' => 2, 'perPage' => 10]);
+
+    $page->set('tableRecordsPerPage', 25);
+
+    expect($page->instance()->getTableRecords()->count())->toBe(12)
+        ->and($page->instance()->getTableRecords()->total())->toBe(12)
+        ->and(test()->evidence->pages[array_key_last(test()->evidence->pages)])->toMatchArray(['perPage' => 25]);
 });
 
 /**
