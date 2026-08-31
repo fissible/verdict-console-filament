@@ -4,6 +4,9 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Approval queue freshness (#6).** Refresh idle rows' offered resolution verbs on every Livewire
+  request while retaining a clicked row's rendered verb set through its action visibility check.
+
 ## [0.1.0] - 2026-08-31
 
 - **Require verdict-console `^0.6`.** The bound moves to the current minor per the standing

@@ -648,3 +648,35 @@ it('refuses an approver the Gate denies before anything can transition', functio
 
     $page->assertNotNotified();
 });
+
+it('offers the new verb sets on the next render when receipts change underneath idle rows', function (): void {
+    $shifting = queueRow('call_shifting');
+    $lapsing = queueRow('call_lapsing');
+
+    $page = queuePage();
+
+    expect(visibleQueueVerbs($page, $shifting))->toEqualCanonicalizing([ApprovalVerb::Approve, ApprovalVerb::Reject])
+        ->and(visibleQueueVerbs($page, $lapsing))->toEqualCanonicalizing([ApprovalVerb::Approve, ApprovalVerb::Reject]);
+
+    // Another operator decides one receipt and the other lapses; nobody acts on this component.
+    // The state column already reads live — every idle row's verbs must move with it on the very
+    // next render, and that render is an ordinary table update, not a bespoke refresh hook.
+    seedReceipt('call_shifting', ApprovalReceiptStatus::Rejected, '+1 hour', decidedBy: 'other-operator');
+    test()->statuses->with('receipt-call_shifting', queueView('call_shifting', ApprovalReceiptStatus::Rejected));
+    test()->statuses->with('receipt-call_lapsing', queueView('call_lapsing', expiresAt: '-1 minute'));
+
+    $page->filterTable('resumability', Resumability::Drivable->value)
+        ->assertTableColumnStateSet('state', 'already_decided', record: $shifting)
+        ->assertTableColumnStateSet('state', 'lapsed_undecided', record: $lapsing);
+
+    $renderedShifting = visibleQueueVerbs($page, $shifting);
+    $renderedLapsing = visibleQueueVerbs($page, $lapsing);
+
+    expect($renderedShifting)->toBe([ApprovalVerb::Close])
+        ->and($renderedLapsing)->toBe([ApprovalVerb::Close]);
+
+    // The same judgment every rendering surface answers to, on the second render's verb sets.
+    $contract = app(ApprovalSurfaceContract::class);
+    $contract->assertRendered($renderedShifting, $shifting->fresh(), test()->statuses->statusFor('receipt-call_shifting'));
+    $contract->assertRendered($renderedLapsing, $lapsing->fresh(), test()->statuses->statusFor('receipt-call_lapsing'));
+});
