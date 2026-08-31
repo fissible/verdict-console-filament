@@ -4,6 +4,10 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Ops surfaces (VC-30, #4).** Execution-claim reconciliation, console doctor, configuration
+  inspection, and anomaly alarms render the console's claim, doctor, configuration, and incident
+  boundaries in the host panel; claim resolution runs through the claim service with the operator's
+  authority and a required reason.
 - **Evidence browser page (VC-29, #3).** The host-panel browser renders the console's replaceable
   evidence read boundary as a read-only custom-data table, carries disposition and capability
   filters through that boundary, states whether recording is off, elsewhere, or merely empty, and

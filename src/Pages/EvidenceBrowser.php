@@ -17,7 +17,6 @@ use Fissible\VerdictConsole\Contracts\EvidenceQuery;
 use Fissible\VerdictConsole\Evidence\EvidenceFilter;
 use Fissible\VerdictConsole\Evidence\EvidenceRecord;
 use Fissible\VerdictConsole\Evidence\EvidenceRecordingState;
-use Fissible\VerdictConsoleFilament\Concerns\ProvidesTestbenchErrorBag;
 use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
 
@@ -30,7 +29,6 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class EvidenceBrowser extends Page implements HasTable
 {
     use InteractsWithTable;
-    use ProvidesTestbenchErrorBag;
 
     protected static ?string $title = 'Evidence browser';
 
