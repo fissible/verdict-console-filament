@@ -368,6 +368,18 @@ it('renders each receipt state distinctly, with the presentation the host captur
         ->assertTableColumnStateSet('state', 'receipt_unavailable', record: $unavailable);
 });
 
+it('makes one status read per row per render, as the item contract promises', function (): void {
+    queueRow('call_single');
+
+    queuePage();
+
+    // ApprovalItem's own contract: "An inbox makes one status read per row." Four columns and a
+    // verb set all deriving from the same item must not become four or five live reads — the
+    // status view is Verdict state, and a queue that multiplies reads per row multiplies load on
+    // the store every poll.
+    expect(array_count_values(test()->statuses->reads)['statusFor:receipt-call_single'] ?? 0)->toBe(1);
+});
+
 it('renders a row whose host presenter captured nothing', function (): void {
     $bare = queueRow('call_bare', presentation: null);
 
@@ -509,9 +521,9 @@ it('filters the queue to rows this console can drive', function (): void {
 it('approves through the real resolution service: receipt transitioned, exact conversation resumed', function (): void {
     $row = queueRow('call_approve');
 
-    queuePage()
+    $page = queuePage()
         ->callAction(TestAction::make('approve')->table($row))
-        ->assertNotified();
+        ->assertNotified('Approved');
 
     $receipt = DB::table('verdict_approval_receipts')->where('tool_call_id', 'call_approve')->first();
 
@@ -529,19 +541,34 @@ it('approves through the real resolution service: receipt transitioned, exact co
 
     expect(array_keys($decisions))->toBe(['call_approve'])
         ->and($decisions['call_approve']->isApproved())->toBeTrue();
+
+    // The decision the operator just made must collapse the row on the same component: a verb set
+    // remembered from before the click is a stale approve button on a spent receipt.
+    test()->statuses->with('receipt-call_approve', queueView('call_approve', ApprovalReceiptStatus::Approved));
+
+    $page->assertActionHidden(TestAction::make('approve')->table($row))
+        ->assertActionHidden(TestAction::make('reject')->table($row))
+        ->assertActionVisible(TestAction::make('close')->table($row));
 });
 
 it('rejects through the real resolution service with a tool-call-keyed refusal', function (): void {
     $row = queueRow('call_reject');
 
-    queuePage()
+    $page = queuePage()
         ->callAction(TestAction::make('reject')->table($row))
-        ->assertNotified();
+        ->assertNotified('Rejected');
 
     expect(DB::table('verdict_approval_receipts')->where('tool_call_id', 'call_reject')->value('status'))->toBe('rejected')
         ->and(array_keys(test()->agent->decisions->all()))->toBe(['call_reject'])
         ->and(test()->agent->decisions->all()['call_reject']->isRejected())->toBeTrue()
         ->and($row->fresh()->resume_attempts)->toBe(1);
+
+    // The collapse must follow either decision, not only approval.
+    test()->statuses->with('receipt-call_reject', queueView('call_reject', ApprovalReceiptStatus::Rejected));
+
+    $page->assertActionHidden(TestAction::make('approve')->table($row))
+        ->assertActionHidden(TestAction::make('reject')->table($row))
+        ->assertActionVisible(TestAction::make('close')->table($row));
 });
 
 it('closes a lapsed row without deciding its receipt', function (): void {
@@ -549,7 +576,7 @@ it('closes a lapsed row without deciding its receipt', function (): void {
 
     queuePage()
         ->callAction(TestAction::make('close')->table($row))
-        ->assertNotified();
+        ->assertNotified('Closed');
 
     // Close is a workflow exit, never an authorization act: the lapsed receipt stays exactly as
     // Verdict left it while the stranded turn receives a keyed refusal.
@@ -566,25 +593,27 @@ it('reports a decision that lapsed between render and click instead of pretendin
     $page = queuePage();
     test()->statuses->with('receipt-call_gone', queueView('call_gone', expiresAt: '-1 second'));
 
+    // Not the success notice: an operator whose decision lapsed must read that it did not happen.
     $page->callAction(TestAction::make('approve')->table($row))
-        ->assertNotified();
+        ->assertNotified('No longer actionable');
 
     expect(DB::table('verdict_approval_receipts')->where('tool_call_id', 'call_gone')->value('status'))->toBe('pending')
         ->and(test()->agent->continuations)->toBe([])
         ->and($row->fresh()->resume_attempts)->toBe(0);
 });
 
-it('reports a receipt another operator resolved behind a stale pending read', function (): void {
+it('reports a receipt another operator resolved behind a stale pending read', function (string $verb): void {
     $row = queueRow('call_raced');
 
     // The fake still answers pending; Verdict's store already holds the other operator's decision.
     // The manager's transition refuses, the service returns that refusal, and this console must
-    // surface it without resuming, without spending, and without recording a resume attempt.
+    // surface it without resuming, without spending, and without recording a resume attempt —
+    // and never as the verb's own success title, whichever verb lost the race.
     seedReceipt('call_raced', ApprovalReceiptStatus::Approved, '+1 hour', decidedBy: 'other-operator');
 
     queuePage()
-        ->callAction(TestAction::make('approve')->table($row))
-        ->assertNotified();
+        ->callAction(TestAction::make($verb)->table($row))
+        ->assertNotified('No longer actionable');
 
     $receipt = DB::table('verdict_approval_receipts')->where('tool_call_id', 'call_raced')->first();
 
@@ -592,9 +621,12 @@ it('reports a receipt another operator resolved behind a stale pending read', fu
         ->and($receipt->approved_by)->toBe('other-operator')
         ->and(test()->agent->continuations)->toBe([])
         ->and($row->fresh()->resume_attempts)->toBe(0);
-});
+})->with(['approve', 'reject']);
 
 it('refuses an approver the Gate denies before anything can transition', function (): void {
+    // Without this, Laravel's handler answers the refusal inside the Livewire request and the
+    // testing macro then trips over its own torn-down action state, masking the real exception.
+    $this->withoutExceptionHandling();
     $row = queueRow('call_denied');
     Gate::define('approve-verdict-action', fn (): bool => false);
 
