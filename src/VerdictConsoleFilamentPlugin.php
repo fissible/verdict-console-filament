@@ -6,8 +6,12 @@ namespace Fissible\VerdictConsoleFilament;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Fissible\VerdictConsoleFilament\Pages\ConfigurationInspection;
+use Fissible\VerdictConsoleFilament\Pages\ConsoleDoctor;
 use Fissible\VerdictConsoleFilament\Pages\EvidenceBrowser;
+use Fissible\VerdictConsoleFilament\Pages\ExecutionClaims;
 use Fissible\VerdictConsoleFilament\Resources\PendingApprovalResource;
+use Fissible\VerdictConsoleFilament\Widgets\AnomalyAlarms;
 
 /**
  * The plugin a host adds to an existing panel: `$panel->plugin(VerdictConsoleFilamentPlugin::make())`.
@@ -39,6 +43,13 @@ final class VerdictConsoleFilamentPlugin implements Plugin
 
         $panel->pages([
             EvidenceBrowser::class,
+            ExecutionClaims::class,
+            ConsoleDoctor::class,
+            ConfigurationInspection::class,
+        ]);
+
+        $panel->widgets([
+            AnomalyAlarms::class,
         ]);
     }
 

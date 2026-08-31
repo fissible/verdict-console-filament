@@ -11,7 +11,6 @@ use Fissible\VerdictConsole\Approvals\ApprovalItem;
 use Fissible\VerdictConsole\Approvals\ApprovalItemFactory;
 use Fissible\VerdictConsole\Approvals\ApprovalVerb;
 use Fissible\VerdictConsole\Approvals\PendingApproval;
-use Fissible\VerdictConsoleFilament\Concerns\ProvidesTestbenchErrorBag;
 use Fissible\VerdictConsoleFilament\Resources\PendingApprovalResource;
 use Livewire\Attributes\Locked;
 
@@ -21,8 +20,6 @@ use Livewire\Attributes\Locked;
  */
 final class ListPendingApprovals extends ListRecords
 {
-    use ProvidesTestbenchErrorBag;
-
     protected static string $resource = PendingApprovalResource::class;
 
     /** @var array<string, ApprovalItem> */

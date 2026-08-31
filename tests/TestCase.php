@@ -37,8 +37,14 @@ abstract class TestCase extends Orchestra
     protected function getPackageProviders($app): array
     {
         return [
-            LivewireServiceProvider::class,
+            // filament/support must register before Livewire: package discovery orders it that
+            // way in a real app, and it matters — SupportServiceProvider transient-binds
+            // Livewire's DataStore to its partials override, and Livewire's later mechanism
+            // registration re-pins that binding as the one shared instance. Registering Livewire
+            // first leaves the transient bind in charge, and every store write (error bags,
+            // testing state) lands on a throwaway instance.
             SupportServiceProvider::class,
+            LivewireServiceProvider::class,
             FilamentServiceProvider::class,
             // A real host gets every split Filament package registered by Laravel's package
             // discovery; Testbench runs no discovery, so the harness lists what discovery would.
