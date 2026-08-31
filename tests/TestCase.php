@@ -6,9 +6,11 @@ namespace Fissible\VerdictConsoleFilament\Tests;
 
 use Filament\FilamentServiceProvider;
 use Filament\Support\SupportServiceProvider;
+use Fissible\Verdict\VerdictServiceProvider;
 use Fissible\VerdictConsole\VerdictConsoleServiceProvider;
 use Fissible\VerdictConsoleFilament\VerdictConsoleFilamentServiceProvider;
 use Illuminate\Foundation\Application;
+use Laravel\Ai\AiServiceProvider;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -31,6 +33,10 @@ abstract class TestCase extends Orchestra
             LivewireServiceProvider::class,
             SupportServiceProvider::class,
             FilamentServiceProvider::class,
+            // A host running this plugin runs the whole stack: Laravel AI and Verdict are what the
+            // console's services resolve against, so booting them is fidelity, not convenience.
+            AiServiceProvider::class,
+            VerdictServiceProvider::class,
             VerdictConsoleServiceProvider::class,
             VerdictConsoleFilamentServiceProvider::class,
             TestPanelProvider::class,
