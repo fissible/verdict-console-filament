@@ -4,6 +4,10 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Evidence browser page (VC-29, #3).** The host-panel browser renders the console's replaceable
+  evidence read boundary as a read-only custom-data table, carries disposition and capability
+  filters through that boundary, states whether recording is off, elsewhere, or merely empty, and
+  exposes the returned record's digest, claim type, invocation ID, and fingerprints on demand.
 - **Approval queue Resource (VC-28, #2).** The host-panel queue now renders the console's scoped,
   stably ordered pending approvals through its live approval-item contract, exposes only the
   per-row approve, reject, and close verbs it resolves, and relays each outcome to the core

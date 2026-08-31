@@ -6,6 +6,7 @@ namespace Fissible\VerdictConsoleFilament;
 
 use Filament\Contracts\Plugin;
 use Filament\Panel;
+use Fissible\VerdictConsoleFilament\Pages\EvidenceBrowser;
 use Fissible\VerdictConsoleFilament\Resources\PendingApprovalResource;
 
 /**
@@ -34,6 +35,10 @@ final class VerdictConsoleFilamentPlugin implements Plugin
         // The queue stays in the host panel so its authenticated operator and scope stay intact.
         $panel->resources([
             PendingApprovalResource::class,
+        ]);
+
+        $panel->pages([
+            EvidenceBrowser::class,
         ]);
     }
 

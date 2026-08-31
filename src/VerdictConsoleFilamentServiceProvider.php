@@ -13,4 +13,11 @@ use Illuminate\Support\ServiceProvider;
  * own panel provider. Nothing here duplicates or overrides a core binding; the heavy Filament
  * dependency stays correctly isolated in this package (core design §9).
  */
-final class VerdictConsoleFilamentServiceProvider extends ServiceProvider {}
+final class VerdictConsoleFilamentServiceProvider extends ServiceProvider
+{
+    public function boot(): void
+    {
+        // The browser is a package page, so its host panel needs this namespace without publishing assets.
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'verdict-console-filament');
+    }
+}
