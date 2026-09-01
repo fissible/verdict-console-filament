@@ -507,3 +507,30 @@ it('offers the detail view and nothing else — no bulk, no mutation, anywhere',
     expect($inventory)->toBe(['view'])
         ->and($table->getFlatBulkActions())->toBe([]);
 });
+
+it('says a chained sink holds the decisions instead of rendering an empty table', function (): void {
+    config()->set('verdict.evidence.recorder', DatabaseEvidenceRecorder::class);
+    insertBrowserEvidence(['id' => 'in-the-table', 'recorded_at' => '2026-08-30 10:00:00']);
+    app()->instance(EvidenceQuery::class, new CannedEvidenceQuery(new EvidenceQueryResult(
+        EvidenceRecordingState::Chained,
+        [],
+        recordedBy: 'verdict-evidence',
+    )));
+
+    // The boundary's chained answer must render core's own copy — never the empty-table line that
+    // reads as "nothing happened", and never the database row the chained sink does not cover.
+    browserPage()
+        ->assertOk()
+        ->assertSee('A chained sink (verdict-evidence) is configured; decisions are not readable from this table.')
+        ->assertDontSee('No decisions have been recorded.')
+        ->assertDontSee('in-the-table');
+
+    app()->instance(EvidenceQuery::class, new CannedEvidenceQuery(new EvidenceQueryResult(
+        EvidenceRecordingState::Chained,
+        [],
+    )));
+
+    browserPage()
+        ->assertSee('A chained sink is configured; decisions are not readable from this table.')
+        ->assertDontSee('No decisions have been recorded.');
+});

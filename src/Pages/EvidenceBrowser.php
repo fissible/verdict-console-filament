@@ -90,6 +90,7 @@ final class EvidenceBrowser extends Page implements HasTable
             ])
             ->emptyStateHeading(fn (): string => match ($this->recording) {
                 EvidenceRecordingState::Off => 'recording is off — blank by config.',
+                EvidenceRecordingState::Chained => 'A chained sink'.($this->recordedBy === null ? '' : " ({$this->recordedBy})").' is configured; decisions are not readable from this table.',
                 EvidenceRecordingState::Elsewhere => "Evidence is recorded elsewhere by {$this->recordedBy}.",
                 EvidenceRecordingState::On => 'No decisions have been recorded.',
             });
