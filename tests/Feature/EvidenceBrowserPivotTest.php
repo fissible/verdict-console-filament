@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Filament\Actions\Testing\TestAction;
 use Filament\Facades\Filament;
+use Fissible\Verdict\Evidence\AttestEvidenceRecorder;
 use Fissible\Verdict\Evidence\DatabaseEvidenceRecorder;
 use Fissible\VerdictConsole\Contracts\EvidenceQuery;
 use Fissible\VerdictConsole\Evidence\EvidenceFilter;
@@ -407,6 +408,24 @@ it('renders the boundarys answer for a pivot, shows it active, and clears it thr
             ['sha256:pivot-target', 2],
             [null, 1],
         ]);
+});
+
+/**
+ * Not a pivot, but forced by the same core minor this slice adopts: verdict-console 0.8 adds the
+ * Chained recording state (#104), and the browser's empty state must speak it rather than fail on
+ * an unhandled enum case. Same copy the core surfaces render, chain identity included.
+ */
+it('says a chained sink is configured instead of implying no decisions', function (): void {
+    config()->set('verdict.evidence.recorder', AttestEvidenceRecorder::class);
+    config()->set('verdict.evidence.attest.chain', 'main-ledger');
+    insertPivotEvidence(['id' => 'invisible', 'recorded_at' => '2026-08-31 10:00:00']);
+
+    pivotBrowserPage()
+        ->assertOk()
+        ->assertSee('A chained sink (main-ledger) is configured; decisions are not readable from this table.')
+        ->assertDontSee('No decisions have been recorded.')
+        ->assertDontSee('recording is off')
+        ->assertDontSee('invisible');
 });
 
 /** The pivot method is the boundary vocabulary's, not an arbitrary-filter escape hatch. */
