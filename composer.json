@@ -24,7 +24,7 @@
   "require": {
     "php": "^8.3",
     "filament/filament": "^5.4",
-    "fissible/verdict-console": "^0.7",
+    "fissible/verdict-console": "^0.8",
     "illuminate/contracts": "^12.0||^13.0",
     "illuminate/support": "^12.0||^13.0"
   },
@@ -79,7 +79,7 @@
   "extra": {
     "verdict-console-filament": {
       "dependency_constraints": {
-        "fissible/verdict-console": "^0.5: the plugin tracks the current core minor; core's Blade layer is the complete baseline this package upgrades (design §9).",
+        "fissible/verdict-console": "^0.8: the plugin tracks the current core minor; core's Blade layer is the complete baseline this package upgrades (design §9).",
         "filament/filament": "^5.4: the oldest Filament 5 minor whose illuminate constraint admits Laravel 13, so the prefer-lowest matrix cell resolves on both supported Laravel majors."
       }
     },

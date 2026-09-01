@@ -4,6 +4,14 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Fingerprint pivots in the evidence browser (#16).** Each non-null fingerprint the console's
+  read boundary can pivot on — actor, subject, argument, approval receipt, configuration, and
+  execution claim — becomes a control in the record detail view that filters the browser through
+  the boundary: a clearable labelled filter composing with the disposition/capability filters in
+  the one `EvidenceFilter`, resetting to page 1, exact values only. Fingerprints the boundary
+  cannot ask about stay inert text. Requires `fissible/verdict-console` `^0.8` (the pivot fields),
+  and the browser's empty state now speaks 0.8's chained recording state.
+
 ## [0.2.0] - 2026-08-31
 
 - **Paged evidence browser (#8).** The browser consumes the evidence boundary's paged read and
