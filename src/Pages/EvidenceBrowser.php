@@ -20,6 +20,7 @@ use Fissible\VerdictConsole\Evidence\EvidenceRecord;
 use Fissible\VerdictConsole\Evidence\EvidenceRecordingState;
 use Illuminate\Contracts\View\View;
 use Illuminate\Pagination\LengthAwarePaginator;
+use InvalidArgumentException;
 
 /**
  * Read-only evidence projection over the console's replaceable read boundary.
@@ -30,6 +31,16 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class EvidenceBrowser extends Page implements HasTable
 {
     use InteractsWithTable;
+
+    /** @var array<string, string> */
+    private const array PIVOT_FIELDS = [
+        'actor_fingerprint' => 'Actor fingerprint',
+        'subject_fingerprint' => 'Subject fingerprint',
+        'argument_fingerprint' => 'Argument fingerprint',
+        'approval_receipt_fingerprint' => 'Approval receipt fingerprint',
+        'configuration_fingerprint' => 'Configuration fingerprint',
+        'execution_claim_fingerprint' => 'Execution claim fingerprint',
+    ];
 
     protected static ?string $title = 'Evidence browser';
 
@@ -48,6 +59,12 @@ final class EvidenceBrowser extends Page implements HasTable
                 $result = app(EvidenceQuery::class)->searchPage(new EvidenceFilter(
                     disposition: $filters['disposition']['value'] ?? null,
                     capability: $filters['capability']['value'] ?? null,
+                    actorFingerprint: $filters['actor_fingerprint']['value'] ?? null,
+                    subjectFingerprint: $filters['subject_fingerprint']['value'] ?? null,
+                    argumentFingerprint: $filters['argument_fingerprint']['value'] ?? null,
+                    approvalReceiptFingerprint: $filters['approval_receipt_fingerprint']['value'] ?? null,
+                    configurationFingerprint: $filters['configuration_fingerprint']['value'] ?? null,
+                    executionClaimFingerprint: $filters['execution_claim_fingerprint']['value'] ?? null,
                 ), $page, $perPage);
 
                 $this->recording = $result->recording;
@@ -79,20 +96,36 @@ final class EvidenceBrowser extends Page implements HasTable
                 SelectFilter::make('capability')->schema([
                     TextInput::make('value')->label('Capability'),
                 ]),
+                ...self::pivotFilters(),
             ])
             ->recordActions([
                 Action::make('view')
                     ->modalSubmitAction(false)
-                    ->modalContent(static fn (array $record): View => view(
+                    ->modalContent(static fn (Action $action): View => view(
                         'verdict-console-filament::pages.evidence-browser-detail',
-                        ['record' => $record],
+                        ['record' => $action->getRecord()],
                     )),
             ])
             ->emptyStateHeading(fn (): string => match ($this->recording) {
                 EvidenceRecordingState::Off => 'recording is off — blank by config.',
                 EvidenceRecordingState::Elsewhere => "Evidence is recorded elsewhere by {$this->recordedBy}.",
+                EvidenceRecordingState::Chained => $this->recordedBy === null
+                    ? 'A chained sink is configured; decisions are not readable from this table.'
+                    : "A chained sink ({$this->recordedBy}) is configured; decisions are not readable from this table.",
                 EvidenceRecordingState::On => 'No decisions have been recorded.',
             });
+    }
+
+    public function pivotOnFingerprint(string $filter, string $value): void
+    {
+        if (! array_key_exists($filter, self::PIVOT_FIELDS)) {
+            throw new InvalidArgumentException("Unsupported evidence fingerprint pivot: {$filter}");
+        }
+
+        $this->tableFilters[$filter]['value'] = $value;
+        $this->getTableFiltersForm()->fill($this->tableFilters);
+        $this->resetPage();
+        $this->unmountAction(cancelParentActions: false);
     }
 
     /** @return array<string, string|null> */
@@ -143,5 +176,24 @@ final class EvidenceBrowser extends Page implements HasTable
         }
 
         return $options;
+    }
+
+    /** @return array<SelectFilter> */
+    private static function pivotFilters(): array
+    {
+        $filters = [];
+
+        foreach (self::PIVOT_FIELDS as $field => $label) {
+            $filters[] = SelectFilter::make($field)
+                ->label($label)
+                ->schema([
+                    TextInput::make('value')->label($label),
+                ])
+                ->indicateUsing(static fn (array $data): ?string => filled($data['value'] ?? null)
+                    ? "{$label}: {$data['value']}"
+                    : null);
+        }
+
+        return $filters;
     }
 }
