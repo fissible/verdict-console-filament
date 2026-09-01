@@ -226,22 +226,26 @@ it('offers a wired pivot for each non-null boundary fingerprint and for nothing 
 
     $page = pivotBrowserPage()->mountAction(TestAction::make('view')->table('detailed'));
 
+    // The detail view lives in the mounted action's modal partial, which the component's own
+    // html() does not carry — the modal html is the surface these controls render into.
+    $modal = $page->getMountedActionModalHtml();
+
     foreach (array_keys(PIVOT_FIELDS) as $field) {
         // The control element carries its own Livewire binding — the wire:click with the method
         // and the record's own value ON the [data-pivot] element: a dead labelled control beside
         // a bound element elsewhere, static call-shaped text, or a wrong-value wiring all fail.
         // (Actually dispatching the click needs a browser; within this harness the attribute IS
         // the wiring, and the method's behavior is exercised through call() below.)
-        expect(pivotControlBinding($page->html(), $field))
+        expect(pivotControlBinding($modal, $field))
             ->toBe("pivotOnFingerprint('".$field."', 'sha256:".str_replace('_', '-', $field)."-of-detailed')", "The {$field} control must bind the pivot on its own element.");
     }
 
     foreach (PIVOTLESS_FIELDS as $field) {
         // The value renders — the detail view still shows the whole record — but no control does,
         // marked or not: no data-pivot marker and no binding naming the field anywhere.
-        $page->assertSee('sha256:'.str_replace('_', '-', $field).'-of-detailed')
-            ->assertDontSeeHtml('data-pivot="'.$field.'"')
-            ->assertDontSeeHtml("pivotOnFingerprint('".$field."'");
+        $page->assertMountedActionModalSee('sha256:'.str_replace('_', '-', $field).'-of-detailed')
+            ->assertMountedActionModalDontSeeHtml('data-pivot="'.$field.'"')
+            ->assertMountedActionModalDontSeeHtml("pivotOnFingerprint('".$field."'");
     }
 });
 
@@ -254,12 +258,12 @@ it('offers no pivot for a null fingerprint, whichever field is null', function (
 
         $page = pivotBrowserPage()->mountAction(TestAction::make('view')->table('detailed'));
 
-        $page->assertDontSeeHtml('data-pivot="'.$nullField.'"')
-            ->assertDontSeeHtml("pivotOnFingerprint('".$nullField."'");
+        $page->assertMountedActionModalDontSeeHtml('data-pivot="'.$nullField.'"')
+            ->assertMountedActionModalDontSeeHtml("pivotOnFingerprint('".$nullField."'");
 
         foreach (array_keys(PIVOT_FIELDS) as $field) {
             if ($field !== $nullField) {
-                $page->assertSeeHtml('data-pivot="'.$field.'"');
+                $page->assertMountedActionModalSeeHtml('data-pivot="'.$field.'"');
             }
         }
     }
