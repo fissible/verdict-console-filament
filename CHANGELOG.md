@@ -4,6 +4,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-09-01
+
 - **Fingerprint pivots in the evidence browser (#16).** Each non-null fingerprint the console's
   read boundary can pivot on — actor, subject, argument, approval receipt, configuration, and
   execution claim — becomes a control in the record detail view that filters the browser through
@@ -42,6 +44,7 @@ All notable changes to Verdict Console Filament will be documented in this file.
   `VerdictConsoleFilamentPlugin` registering into an existing panel -- the host's panel, not one
   of this package's own -- smoke-tested against a Testbench panel; the 24-cell CI matrix.
 
-[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/fissible/verdict-console-filament/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fissible/verdict-console-filament/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fissible/verdict-console-filament/releases/tag/v0.1.0
