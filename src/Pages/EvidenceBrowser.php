@@ -125,7 +125,7 @@ final class EvidenceBrowser extends Page implements HasTable
         $this->tableFilters[$filter]['value'] = $value;
         $this->getTableFiltersForm()->fill($this->tableFilters);
         $this->resetPage();
-        $this->unmountAction(cancelParentActions: false);
+        $this->unmountAction();
     }
 
     /** @return array<string, string|null> */
