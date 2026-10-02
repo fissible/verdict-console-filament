@@ -27,12 +27,14 @@ use Illuminate\Support\Facades\Gate;
 use Laravel\Ai\Approvals\Decisions;
 use Laravel\Ai\Concerns\RemembersConversations as RemembersConversationsTrait;
 use Laravel\Ai\Contracts\Agent;
+use Laravel\Ai\Contracts\AgentInput;
 use Laravel\Ai\Contracts\RemembersConversations as RemembersConversationsContract;
 use Laravel\Ai\Enums\Lab;
+use Laravel\Ai\Messages\UserMessage;
 use Laravel\Ai\Promptable;
 use Laravel\Ai\Responses\AgentResponse;
 use Laravel\Ai\Responses\Data\Meta;
-use Laravel\Ai\Responses\Data\Usage;
+use Laravel\Ai\Responses\Data\TextUsage;
 use Livewire\Features\SupportTesting\Testable;
 use Livewire\Livewire;
 use PHPUnit\Framework\AssertionFailedError;
@@ -116,7 +118,7 @@ final class QueueRecordingAgent implements Agent, RemembersConversationsContract
 
     #[Override]
     public function prompt(
-        Decisions|string $prompt,
+        AgentInput|UserMessage|Decisions|string $prompt,
         array $attachments = [],
         Lab|array|string|null $provider = null,
         ?string $model = null,
@@ -126,7 +128,7 @@ final class QueueRecordingAgent implements Agent, RemembersConversationsContract
             $this->decisions = $prompt;
         }
 
-        return new AgentResponse('queue-recording-invocation', '', new Usage, new Meta);
+        return new AgentResponse('queue-recording-invocation', '', new TextUsage, new Meta);
     }
 }
 

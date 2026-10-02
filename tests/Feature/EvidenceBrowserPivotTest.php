@@ -37,6 +37,8 @@ const PIVOT_EVIDENCE_STUBS = [
     'add_tool_description_fingerprints_to_verdict_evidence_table.php.stub',
     'add_record_identity_to_verdict_evidence_table.php.stub',
     'add_intent_id_to_verdict_evidence_table.php.stub',
+    'add_review_outcome_to_verdict_evidence_table.php.stub',
+    'add_review_request_fingerprint_to_verdict_evidence_table.php.stub',
 ];
 
 /** The boundary's pivot vocabulary: table filter name => EvidenceFilter constructor parameter. */
