@@ -65,6 +65,11 @@ function inspectionNeverRuns(): Closure
 
 beforeEach(function (): void {
     config()->set('verdict.approvals.authorizer', AllowAllApprovalAuthorizer::class);
+
+    // Console #107's evidence-recording finding fires whenever the sink posture is Off and no
+    // explicit decision is recorded. This harness's default recorder IS the null one, so the
+    // baseline run records the decision the way a host would.
+    config()->set('verdict-console.evidence.accepted_off', true);
     Gate::define('resolve-verdict-execution-claim', fn (): bool => true);
 
     $verdict = dirname(__DIR__, 2).'/vendor/fissible/verdict/database/migrations';

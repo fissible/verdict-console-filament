@@ -4,6 +4,14 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+- **Core `^0.11`: laravel/ai 1.0 and Verdict 0.18 (BREAKING).** The plugin now tracks
+  `fissible/verdict-console ^0.11`, which requires `laravel/ai ^1.0` and `fissible/verdict ^0.18`.
+  The suite moves with the core's seams: the queue-recording agent carries Laravel AI 1.0's widened
+  `prompt()` input union and `TextUsage`; the evidence-browser fixtures track the two evidence
+  columns Verdict 0.16/0.17 added (`review_outcome`, `review_request_fingerprint`); and the doctor
+  baseline records the explicit evidence-recording decision (console #107's
+  `verdict-console.evidence.accepted_off`) the way a host would, so a clean install reads clean.
+
 ## [0.3.0] - 2026-09-01
 
 - **Fingerprint pivots in the evidence browser (#16).** Each non-null fingerprint the console's
