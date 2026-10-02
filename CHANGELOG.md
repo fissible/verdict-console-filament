@@ -4,6 +4,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-02
+
 - **Core `^0.11`: laravel/ai 1.0 and Verdict 0.18 (BREAKING).** The plugin now tracks
   `fissible/verdict-console ^0.11`, which requires `laravel/ai ^1.0` and `fissible/verdict ^0.18`.
   The suite moves with the core's seams: the queue-recording agent carries Laravel AI 1.0's widened
@@ -52,7 +54,8 @@ All notable changes to Verdict Console Filament will be documented in this file.
   `VerdictConsoleFilamentPlugin` registering into an existing panel -- the host's panel, not one
   of this package's own -- smoke-tested against a Testbench panel; the 24-cell CI matrix.
 
-[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/fissible/verdict-console-filament/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/fissible/verdict-console-filament/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/fissible/verdict-console-filament/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/fissible/verdict-console-filament/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/fissible/verdict-console-filament/releases/tag/v0.1.0
